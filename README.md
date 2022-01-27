@@ -21,7 +21,7 @@ openssl genpkey -algorithm RSA -out rsa_private.pem -pkeyopt rsa_keygen_bits:204
 openssl rsa -in rsa_private.pem -pubout -out rsa_public.pem
 ```
 Place the public key in the device configuration of Google IoT central device managment (GCloud --> IoT Core --> Devices --> Create Device --> Coomunication, Cloud Logging, Authentication --> Authentication (optional) --> e.g. Manual key upload)
-
+- configure the *config.json* according to your needs. Especially adopt the Google project-, device- and IoT Core registryId
 
 In the folder of the project
 ```
