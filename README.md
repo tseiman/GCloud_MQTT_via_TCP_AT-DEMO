@@ -36,4 +36,12 @@ Place the public key from the *google-keys* folder in the device configuration o
 ## How to run:
 ```
 node main.js
+```
+
+You should see now the communication via AT commands e.g.:
+- setting up the Mobile stack (APN)
+- configure TLS Certifcate for secure TCP TLS communciation with Google MQTT service
+- configuring the TCP stack via AT commands
+- sending MQTT CONNECT, PUBLISH, PING, DISCONNECT messages via the Modem embedded TCP stack
+- tearing down the TCP conenction
 
