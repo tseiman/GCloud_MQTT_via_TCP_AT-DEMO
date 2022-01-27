@@ -13,18 +13,23 @@ Often IoT Cellular (but as well LORA or WiFi) modems offer an embedded TCP stack
 ```
 npm install
 ```
-- Download the Google minimal IoT certificate from here https://pki.goog/gtsltsr/gtsltsr.crt into the certifcates folder.
+- Download the Google minimal IoT certificate from here https://pki.goog/gtsltsr/gtsltsr.crt into the *certifcates* folder.
 - convert this certifcate into an ASCII armored version e.g. by using OpenSSL: 
 ```
+cd certificates
+wget https://pki.goog/gtsltsr/gtsltsr.crt
 openssl x509 -inform DER -in gtsltsr.crt -out gtsltsr.pem -outform PEM
+cd ..
 ```
 Now the MQTT client needs an authentication key pair for the google cloud - which needs to generated in the folder *google-keys* e.g. like:
 
 ```
+cd google-keys
 openssl genpkey -algorithm RSA -out rsa_private.pem -pkeyopt rsa_keygen_bits:2048
 openssl rsa -in rsa_private.pem -pubout -out rsa_public.pem
+cd ..
 ```
-Place the public key in the device configuration of Google IoT central device managment (GCloud --> IoT Core --> Devices --> Create Device --> Coomunication, Cloud Logging, Authentication --> Authentication (optional) --> e.g. Manual key upload)
+Place the public key from the *google-keys* folder in the device configuration of Google IoT central device managment (GCloud --> IoT Core --> Devices --> Create Device --> Coomunication, Cloud Logging, Authentication --> Authentication (optional) --> e.g. Manual key upload)
 - configure the *config.json* according to your needs. Especially adopt the Google project-, device- and IoT Core registryId
 
 
