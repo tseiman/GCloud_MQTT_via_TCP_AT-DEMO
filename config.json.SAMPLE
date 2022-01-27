@@ -1,0 +1,15 @@
+{
+    "dt": 50,
+    "HOST": "mqtt.2030.ltsapis.goog",
+    "PORT": 8883,
+    "setCert": true,
+    "APN": "internet",
+    "googleProjectId": "my-google-project-id",
+    "region": "europe-west1",
+    "registryId": "my-google-iot-core-registr-id",
+    "deviceId": "MyDeviceName-from-google-iot-core-device-in-registry",
+    "nocolorlog": false,
+    "uart": "/dev/ttyUSB0",
+    "tlsCert": "./certificates/gtsltsr.pem",
+    "devicePrivateKeyFile": "./google-keys/rsa_private.pem"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "MQTToverAT",
+  "version": "1.0.0",
+  "description": "MQTT test client making use of embedded AT stack (Sierra Wireless HL780x)",
+  "main": "main.js",
+  "author": "Thomas Schmidt",
+  "license": "",
+  "scripts": {
+    "start": "node ."
+  },
+  "dependencies": {
+    "serialport-gsm": "^3.4.1",
+    "serialport": "^9.0.7",
+    "node-color-log": "^5.2.0",
+    "@root/encoding": "^1.0.1",
+    "moment": "^2.29.1",
+    "nconf": "0.11.3",
+    "jsonwebtoken": "^8.5.0"
+  }
+}

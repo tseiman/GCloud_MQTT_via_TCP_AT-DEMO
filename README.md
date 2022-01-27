@@ -13,6 +13,10 @@ Often IoT Cellular (but as well LORA or WiFi) modems offer an embedded TCP stack
 ```
 npm install
 ```
+- copy the *config.json.SAMPLE* to *config.json*
+```
+cp config.json.SAMPLE config.json
+```
 - Download the Google minimal IoT certificate from here https://pki.goog/gtsltsr/gtsltsr.crt into the *certifcates* folder.
 - convert this certifcate into an ASCII armored version e.g. by using OpenSSL: 
 ```

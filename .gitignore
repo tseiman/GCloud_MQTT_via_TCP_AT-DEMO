@@ -1,0 +1,5 @@
+/certificates/*
+/google-keys/*
+*.BACKUP
+/node_modules
+config.json
