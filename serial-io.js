@@ -1,4 +1,4 @@
-
+'use strict';
 
 const Logger           = require('node-color-log');
 
@@ -85,10 +85,9 @@ class SerialIO {
 
 
 	write(data) {
-	Logger.debug("Serial Send >>>>>>>:" + this.mqttClient.buf2hex(data));
-
-		Logger.debug(">>> " + data);
-		this.port.write(data);
+	    Logger.debug("Serial Send >>>>>>>:"+  this.mqttClient.buf2hex(data));
+	    Logger.debug(">>> " + data);
+	    this.port.write(data);
 	}
 
 	isOpen() {
@@ -100,6 +99,42 @@ class SerialIO {
 		Logger.info("Closing a serial port");
 		if(this.isOpen()) this.port.close();
 	}
+
+	sendAndExpect(cmd,expect,timeout,noNewLine) {
+	    if(typeof noNewLine !== 'undefined' && noNewLine ) {
+		Logger.warn("sending without delimter"+  typeof cmd);
+		this.write(cmd);
+	    } else { 
+		this.writeln(cmd);
+	    }
+	    return this.waitURC(expect,timeout);
+	}
+
+
+	waitURC(expect,timeout) {
+	    Logger.info("wait for: " + expect);
+	    var self = this;
+	    return new Promise(function(resolve, reject) {
+		var timeOHandler = null;
+		if(timeout !== undefined) { 
+    		    timeOHandler = setTimeout(function() { 
+			Logger.warn("Timeout after " + timeout +"ms waiting for " + expect);
+			reject({data: "timeout", result: false}); 
+		    }, timeout);
+		}
+		self.setCallback ( function (data) { 
+		    var re = new RegExp(expect);    
+		    if (re.test(data)) {
+			Logger.info("found expected Data");
+			clearTimeout(timeOHandler);
+    			resolve({result: true, "data": data});
+		    }  
+
+		}); 
+	    }); 
+    }
+
+
 }
 
 

@@ -1,5 +1,4 @@
 {
-    "dt": 50,
     "HOST": "mqtt.2030.ltsapis.goog",
     "PORT": 8883,
     "setCert": true,

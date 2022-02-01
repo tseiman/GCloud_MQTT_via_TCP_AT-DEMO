@@ -37,9 +37,9 @@ Place the public key from the *google-keys* folder in the device configuration o
 - configure the *config.json* according to your needs. Especially adopt the Google project-, device- and IoT Core registryId
 
 
-## How to run:
+## How to run the simple example:
 ```
-node main.js
+node simple.js
 ```
 
 You should see now the communication via AT commands e.g.:

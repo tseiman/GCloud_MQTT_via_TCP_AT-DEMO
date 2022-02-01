@@ -1,3 +1,6 @@
+'use strict';
+
+
 const Logger           = require('node-color-log');
 const jwt              = require('jsonwebtoken');
 const fs               = require('fs');
@@ -74,7 +77,7 @@ class SimpleMQTT {
         	encodedByte = encodedByte | 128;
             }
 	    lenFieldArray.push(encodedByte);
-                    console.log(">>>>" + encodedByte.toString(16));
+//                    console.log(">>>>" + encodedByte.toString(16));
 	}  while ( len > 0 );
 	return lenFieldArray;
     }
@@ -239,7 +242,7 @@ class SimpleMQTT {
 
 //	buffer[1] = this.toBytesInt32(buffer.length - 2)[3]; // minus message type and total length byte fields
 
-console.log("----------------------------------" + (buffer.length - 1));
+// console.log("----------------------------------" + (buffer.length - 1));
 	var lenFieldArray = this.encodeMqttMesageLen(buffer.length - 1);  // minus message type and total length byte fields
 	var mergePos = 1;
 	lenFieldArray.forEach(lenByte => {
