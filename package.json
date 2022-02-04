@@ -2,7 +2,7 @@
   "name": "MQTToverAT",
   "version": "1.0.0",
   "description": "MQTT test client making use of embedded AT stack (Sierra Wireless HL780x)",
-  "main": "main.js",
+  "main": "simple.js",
   "author": "Thomas Schmidt",
   "license": "",
   "scripts": {

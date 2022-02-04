@@ -56,13 +56,38 @@ class SimpleMQTT {
 
     }
 
+
+/* *******************************
+ * Helper method - creates a hexdump for console
+ */
+ 	static buf2hex(buffer, blockSize) {
+		blockSize = blockSize || 16;
+      var lines = [];
+		var hex = "0123456789ABCDEF";
+		buffer = buffer.toString();
+		for (var b = 0; b < buffer.length; b += blockSize) {
+    		var block = buffer.slice(b, Math.min(b + blockSize, buffer.length));
+    	   var addr = ("0000" + b.toString(16)).slice(-4);
+    	   var codes = block.split('').map(function (ch) {
+        		var code = ch.charCodeAt(0);
+        		return " " + hex[(0xF0 & code) >> 4] + hex[0x0F & code];
+    		}).join("");
+    	   codes += "   ".repeat(blockSize - block.length);
+    	   var chars = block.replace(/[\x00-\x1F\x20]/g, '.');
+    	   chars +=  " ".repeat(blockSize - block.length);
+    	   lines.push("\t\t\t\t " + addr + " " + codes + "  " + chars);
+		}
+      return lines.join("\n");
+    }
+
+
 /* *******************************
  * Helper method - is to dump a binary buffer into hex (to display the buffer)
  */
-    buf2hex(buffer) {
+/*    static buf2hex(buffer) {
 	return [...new Uint8Array(buffer)].map(x => x.toString(16).padStart(2, '0')).join(' ');
     }
-
+*/
 /* *******************************
  * Helper method - encode the length information into the dynamic len field
  */
@@ -110,11 +135,11 @@ class SimpleMQTT {
  * Helper method - converts a string to a byte array
  */
     stringToByteArray(str) {
-	var bytes = [];
-	for (var i = 0; i < str.length; ++i) {
+		var bytes = [];
+		for (var i = 0; i < str.length; ++i) {
 	    var code = str.charCodeAt(i);
 	    bytes = bytes.concat([code]);
-	}
+		}
 	return bytes;
     }
 
@@ -171,7 +196,7 @@ class SimpleMQTT {
                              |     |                   |    |     |
 	                     v     v  MQIsdp           |    |     v     
 		          -------  -----------------   v    v  -------    */
-	var dataBuffer = [0x0,0x4,0x4d,0x51,0x54,0x54,0x4,flag,0x0,0x5];
+	var dataBuffer = [0x0,0x4,0x4d,0x51,0x54,0x54,0x4,flag,0x0,(this.config.keepAlive & 255)];
 //	var dataBuffer = [0x0,0x5,0x6d,0x71,0x74,0x74,0x73,0x4,flag,0x0,0x5];
 // mqtts
 	var that = this;
@@ -263,7 +288,7 @@ class SimpleMQTT {
 
 /* *******************************
 */
-    getPingReqMsg() {
+   getPingReqMsg() {
 
 /* --------------------------------------------------------------
          Total len = 0      |
@@ -272,36 +297,33 @@ class SimpleMQTT {
 	var buffer = [0xc0,0x0];
 //	var buffer = [0xab,0xcd];
 
-	var message = Buffer.alloc(buffer.length,"ascii");
-	for (var i = 0; i < buffer.length; ++i) {
-	    message[i] = buffer[i];
-	}
+		var message = Buffer.alloc(buffer.length,"ascii");
+		for (var i = 0; i < buffer.length; ++i) {
+	   	 message[i] = buffer[i];
+		}
 	
 
 	return {"len" : buffer.length, "msg": message };
 	
-    }
+   }
 
 /* *******************************
 */
-    getDisconnectMsg() {
+   getDisconnectMsg() {
 
 /* --------------------------------------------------------------
-         Total len = 0      |
-	            PING    |
-		       v    v    */
-	var buffer = [0xe0,0x0];
-//	var buffer = [0xab,0xcd];
+         Total len = 0  	|
+	            PING   |		|
+		      			 v    v    */
+		var buffer = [0xe0,0x0];
 
-	var message = Buffer.alloc(buffer.length,"ascii");
-	for (var i = 0; i < buffer.length; ++i) {
-	    message[i] = buffer[i];
-	}
+		var message = Buffer.alloc(buffer.length,"ascii");
+		for (var i = 0; i < buffer.length; ++i) {
+	    	message[i] = buffer[i];
+		}
+		return {"len" : buffer.length, "msg": message };
 	
-
-	return {"len" : buffer.length, "msg": message };
-	
-    }
+   }
 
 
 /* *******************************
@@ -309,26 +331,29 @@ class SimpleMQTT {
  * The methos returns a JSOn structure with the return code and the message type
  * An error message  might be additionally additionally with it's String error message
  */
-    parseMessage(msg) {
-	var res= {};
+   parseMessage(msg) {
+		var res= {};
 
-	this.stringToByteArray(msg);
+		// this.stringToByteArray(msg);
 
-	var buffer = this.stringToByteArray(msg);
-	Logger.info("Incomming message: " + this.buf2hex(buffer) + ", msg code:" + buffer[0]);
+		var buffer =  Buffer.from(msg);
+		
 
-	if(buffer[0] == 0x20) {
-	    res.type = "ACK"; // yes- this is a very very basic implementation and needs more
-	    var mqttRet = parseInt(buffer[3]);
-	    res.ret = mqttRet;
-	    res.retMsg = MQTT_ReturnCodes[mqttRet];
-	} else if(buffer[0] == 0xd0) {
-	    res.type = "PONG";
-	    res.ret = null;
-	    res.retMsg = null;
-	}
-	return res;
-    }
+		// var buffer = this.stringToByteArray(msg);
+		Logger.debug("Incomming message: \n" + SimpleMQTT.buf2hex(buffer) + ", msg code:" + buffer[0]);
+
+		if(buffer[0] == 0x20) {
+	   	res.type = "ACK"; // yes- this is a very very basic implementation and needs more
+	    	var mqttRet = parseInt(buffer[3]);
+	    	res.ret = mqttRet;
+	    	res.retMsg = MQTT_ReturnCodes[mqttRet];
+		} else if(buffer[0] == 0xEF) { // !!!!!!!! Normally this should be 0x0D ! - but I have here some massive recoding issue !! therefore this is a terrible Hack
+	   	res.type = "PONG";
+	    	res.ret = null;
+	    	res.retMsg = null;
+		}
+		return res;
+   }
 
 }
 module.exports = SimpleMQTT;

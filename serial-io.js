@@ -14,16 +14,17 @@ class SerialIO {
 
 	constructor(config) {
 		this.config  =  config;
-		this.callback = null;
+		this.callback = new Map();
+		this.timeOHandler = null;
 
-    this.mqttClient = new SimpleMQTT({
-	"clientID": 0, 
-	"username": "ignored",  
-	"password": "",
-	"projectId" : 0,
-	"privateKeyFile" : "./google-keys/rsa_private.pem"
-    });
-
+	/*	this.mqttClient = new SimpleMQTT({
+		    "clientID": 0, 
+		    "username": "ignored",  
+		    "password": "",
+		    "projectId" : 0,
+		    "privateKeyFile" : "./google-keys/rsa_private.pem"
+		});
+*/
 		
 		if(config.port === undefined || config.port === null || config.baud === undefined || config.baud === null) throw ('configuration for serial needs port and baud - e.g. new SerialIO({port: "/dev/ttyUSB1", baud: 115200, delimiter: "\r\n" });');
 		Logger.info("creating new serial port: " + config.port + ", baud: " + config.baud );
@@ -37,19 +38,45 @@ class SerialIO {
 			lock: false,
 			flowControl: false
 		});
-
-		
-
 	}
 
 
-    buf2hex(buffer) {
-	return [...new Uint8Array(buffer)].map(x => x.toString(16).padStart(2, '0')).join(' ');
-    }
+	registerCallback(name,expect,callback) {
+		if(name in this.callback) {
+			Logger.error("Callback with thename " + name + " exists already. Callback ignored !!!");
+			return;
+		}
+		Logger.debug("setting callback with name: \"" + name + "\" and expect:\"" + expect +"\n");
+	    this.callback.set(name, {'name': name, 're': new RegExp(expect), 'expect': expect, 'callback':  callback});
 
+	}
 
-	setCallback(callback) {
-	    this.callback = callback;
+	triggerCallbacks(data) {
+		if(this.callback.size === 0) {
+			Logger.debug("No callbacks defined");
+			return;
+		}
+		var self = this;
+		this.callback.forEach(function (callback) {
+	//		Logger.log(">>>>>" + callback.name + ", call=" + callback.re.test(data) + ", data: "  + ", expect: " + callback.expect );
+			if (callback.re.test(data)) { 
+				Logger.debug("Matching callback found for RegEx:\"" + callback.expect +"\" - calling:\"" + callback.name + "\"");
+				callback.callback(data);
+			}
+		});
+	}
+
+	removeCallback(name) {
+		if(this.callback.size === 0) {
+			Logger.warn("NO Callback defined can't destroy");
+			return;
+		}
+		if(! this.callback.has(name)) {
+			Logger.error("Callback \"" + name + "\" is not defined, nothing removed !");
+			return;
+		}
+		Logger.debug("removing callback \"" + name + "\"");
+		this.callback.delete(name);
 	}
 
 	open() {
@@ -65,28 +92,21 @@ class SerialIO {
 		this.parser =  this.port.pipe(new Readline({ delimiter: this.config.delimiter }));
 
 		this.parser.on('data', function (data) {
-		    Logger.debug("<<< " + data.toString());
-		    if(typeof self.callback !== "undefined" || self.callback !== null) {
-			self.callback(data);
-
-		    } else {
-			Logger.warn("NO Callback defined");
-
-		    }
-
+		    Logger.debug("<<< \n" + SimpleMQTT.buf2hex(data));
+			self.triggerCallbacks(data);
 		});	
 
 	}
 
 	writeln(data) {
-		Logger.debug(">>> " + data);
+		Logger.debug(">>> \n" + SimpleMQTT.buf2hex(data + this.config.delimiter));
 		this.port.write(data + this.config.delimiter);
 	}
 
 
 	write(data) {
-	    Logger.debug("Serial Send >>>>>>>:"+  this.mqttClient.buf2hex(data));
-	    Logger.debug(">>> " + data);
+	    Logger.debug(">>>:\n"+  SimpleMQTT.buf2hex(data));
+//	    Logger.debug(">>> " + data);
 	    this.port.write(data);
 	}
 
@@ -100,42 +120,49 @@ class SerialIO {
 		if(this.isOpen()) this.port.close();
 	}
 
+	waitResponseClearTimeOut() {
+		Logger.warn("Cleaning up sendAndExpect response timer ! (this is a potential dangerous operation)");
+		clearTimeout(this.timeOHandler);
+	}
+
 	sendAndExpect(cmd,expect,timeout,noNewLine) {
 	    if(typeof noNewLine !== 'undefined' && noNewLine ) {
-		Logger.warn("sending without delimter"+  typeof cmd);
-		this.write(cmd);
+			Logger.debug("sending without delimter"+  typeof cmd);
+			this.write(cmd);
 	    } else { 
-		this.writeln(cmd);
+			this.writeln(cmd);
 	    }
-	    return this.waitURC(expect,timeout);
+	    return this.waitResponse(expect,timeout);
 	}
 
 
-	waitURC(expect,timeout) {
-	    Logger.info("wait for: " + expect);
+	waitResponse(expect,timeout) {
+	    Logger.debug("wait for: " + expect);
 	    var self = this;
 	    return new Promise(function(resolve, reject) {
-		var timeOHandler = null;
-		if(timeout !== undefined) { 
-    		    timeOHandler = setTimeout(function() { 
-			Logger.warn("Timeout after " + timeout +"ms waiting for " + expect);
-			reject({data: "timeout", result: false}); 
-		    }, timeout);
-		}
-		self.setCallback ( function (data) { 
-		    var re = new RegExp(expect);    
-		    if (re.test(data)) {
-			Logger.info("found expected Data");
-			clearTimeout(timeOHandler);
-    			resolve({result: true, "data": data});
-		    }  
+			// var timeOHandler = this.;
+			if(timeout !== undefined) { 
+    		    self.timeOHandler = setTimeout(function() { 
+					Logger.warn("Timeout after " + timeout +"ms waiting for " + expect);
+					self.removeCallback("synchron.waitResponse");
+					reject({data: "timeout", result: false}); 
+		    	}, timeout);
+			}
+			self.registerCallback ( "synchron.waitResponse",expect, function (data) { 
+//		    	var re = new RegExp(expect);    
+//		    	if (re.test(data)) {
+					Logger.debug("found expected Data");
+					clearTimeout(self.timeOHandler);
+					self.removeCallback("synchron.waitResponse");
+    				resolve({result: true, "data": data});
+//		    	}  
 
-		}); 
+			}); 
 	    }); 
-    }
+	}
+
 
 
 }
-
-
 module.exports = SerialIO;
+

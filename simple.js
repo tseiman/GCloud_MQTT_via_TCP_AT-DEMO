@@ -29,9 +29,9 @@ var telcoTelemetry = new TelcoTelemetry(serialIO);
 
 async function cleanAT() {
     await serialIO.sendAndExpect('AT+KTCPCLOSE=' + sessionID + '\r','.*',2000).catch((err) => { Logger.error(err);});
-        await serialIO.sendAndExpect('AT+KTCPDEL=' + sessionID + '\r','.*',2000).catch((err) => { Logger.error(err);});
-        await serialIO.sendAndExpect( 'ATE1\r','.*',2000).catch((err) => { Logger.error(err);});
-    }
+    await serialIO.sendAndExpect('AT+KTCPDEL=' + sessionID + '\r','.*',2000).catch((err) => { Logger.error(err);});
+    await serialIO.sendAndExpect( 'ATE1\r','.*',2000).catch((err) => { Logger.error(err);});
+}
 
 async function cleanExit(err) {
     await cleanAT();
@@ -90,7 +90,7 @@ async function f1() {
 	    try {
 		var certDataPEM  = fs.readFileSync(nconf.get('tlsCert'), 'ascii');
 		res = await serialIO.sendAndExpect( 'AT+KCERTSTORE=0,' + certDataPEM.length + ',0' + '\r','.*CONNECT.*',5000);
-		res = await serialIO.sendAndExpect( certDataPEM,'.*OK.*',2000);
+		res = await serialIO.sendAndExpect( certDataPEM,'.*OK.*',2000,true);
 	    } catch(e) {}
 	
 	    res = await serialIO.sendAndExpect( 'AT+CTZU=0\r','.*OK.*',2000);
@@ -120,7 +120,7 @@ async function f1() {
 	var buffSeq = [buffer, Buffer.from("--EOF--Pattern--")];
 	var finalBuffer = Buffer.concat(buffSeq);
 
-	Logger.info("Sending CONNECT: " + mqttClient.buf2hex(finalBuffer));
+	Logger.info("Sending CONNECT: " + SimpleMQTT.buf2hex(finalBuffer));
 
 	res = await serialIO.sendAndExpect( 'AT+KTCPSND=' + sessionID + ',' + mqttMsg.len + '\r','.*CONNECT.*',5000);
 
@@ -148,7 +148,7 @@ async function f1() {
 	Logger.info(mqttInMsg);
 
 	mqttMsg = mqttClient.getPublishMsg("/devices/" + nconf.get('deviceId') + "/events", JSON.stringify(telemetry));
-	Logger.info("Sending PUBLISH: " + mqttClient.buf2hex(mqttMsg.msg));
+	Logger.info("Sending PUBLISH: " + SimpleMQTT.buf2hex(mqttMsg.msg));
 
 	
 	res = await serialIO.sendAndExpect( 'AT+KTCPSND=' + sessionID + ',' + mqttMsg.len + '\r','.*CONNECT.*',5000);
@@ -190,7 +190,7 @@ async function f1() {
 	buffSeq = [buffer, Buffer.from("--EOF--Pattern--")];
 	finalBuffer = Buffer.concat(buffSeq);
 	
-	Logger.info("Sending DISCONNECT: " + mqttClient.buf2hex(finalBuffer));
+	Logger.info("Sending DISCONNECT: " + SimpleMQTT.buf2hex(finalBuffer));
 
 	res = await serialIO.sendAndExpect( 'AT+KTCPSND=' + sessionID + ',' + (mqttDisconnectMsg.len - 1) + '\r','.*CONNECT.*',5000);
 	res = await serialIO.sendAndExpect(  finalBuffer,'.*KTCP_NOTIF: *' + sessionID + ',4.*',5000, true);
