@@ -5,5 +5,8 @@ https://cloud.google.com/iot/docs/how-tos/mqtt-bridge#downloading_mqtt_server_ce
 Convert the gtsltsr.crt file downloaded from google to a PEM (ascii armoured certifcate) file by using the following commands:
 
 ```
-openssl x509 -in gtsltsr.crt -inform der -out gtsltsr.pem -outform PEM
+cd certificates
+wget https://pki.goog/gtsltsr/gtsltsr.crt
+openssl x509 -inform DER -in gtsltsr.crt -out gtsltsr.pem -outform PEM
+cd ..
 ```
