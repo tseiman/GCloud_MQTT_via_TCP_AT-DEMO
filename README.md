@@ -7,6 +7,7 @@ This setup demonstrates GCloud MQTT IoT Core via an Sierra Wireless HL780x (http
 
 ## Description
 Often IoT Cellular (but as well LORA or WiFi) modems offer an embedded TCP stack. This limits the networking effort on an eventual small MCU - driving the modem. Some modems offer as well an embedded MQTT stack however Google cloud IoT Central MQTT server has special requirements in sense of timing and authentication which are not so easy to meet. In general this demo can show that GCloud MQTT server might be not a very good solution for cellular IoT communcation as it is way too senetive in sense of timing. Additionally it requires compareable long strings for MQTT authentication and e.g. MQTT PUBLISH (e.g. including project name etc.) which is pretty unnessesary payload for a mobile network - especially when it comes to LPWA technologies like CatM1 or even NBIoT.
+![MQTT Setup](https://github.com/tseiman/GCloud_MQTT_via_TCP_AT-Demo/blob/main/doc/NodeJS-MQTT-Google.jpg?raw=true)
 
 ## Installation:
 - In the folder of the project
